@@ -111,33 +111,36 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { fullName, email } = req.body;
-
     const user = await userModel.findById(id);
 
     if (!user) {
-      return res.status(404).json("User Not Found");
+      return res.status(404).json({ message: "User Not Found" });
     }
 
-    const oldFilePaths = `./uploads/${user.familyPictures}`;
+    const oldFilePaths = user.familyPictures.map((e) => `./uploads/${e}`);
 
     const deletedUser = await userModel.findByIdAndDelete(id);
 
     if (deletedUser) {
-      fs.unlinkSync(oldFilePaths);
-    }
-    res
-      .status(200)
-      .json({
-        message: "User Has Been Found And Has Been Deleted Successfully",
-        data: deletedUser,
+      oldFilePaths.forEach((path) => {
+        if (fs.existsSync(path)) {
+          fs.unlinkSync(path);
+        }
       });
+    }
+
+    res.status(200).json({
+      message: "User Has Been Deleted Successfully",
+      data: deletedUser,
+    });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "Error Trying To Delete User" });
   }
 };
+
